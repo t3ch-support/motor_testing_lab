@@ -26,12 +26,17 @@ class X_Motor {
 		const int PROFILE_VELOCITY = 130;
 
 		bool isGripper = false;
-		int _id;
+		int id;
+        double gear_ratio = 1;
+        int reset_state = 0;
+        int offset = 0;
+
 		int DXL_OPERATING_MODE = 3;
 		int dxl_comm_result = COMM_TX_FAIL;
 		uint8_t dxl_error = 0;
 		int16_t dxl_present_position = 0;
 		int16_t dxl_present_load = 0;
+        
 
 		dynamixel::PortHandler *portHandler;
 		dynamixel::PacketHandler *packetHandler;
@@ -39,9 +44,10 @@ class X_Motor {
 
 		X_Motor();
 		
-		void init(int id, dynamixel::PortHandler *_portHandler,
+		void init(int _id, dynamixel::PortHandler *_portHandler,
 				  dynamixel::PacketHandler *_packetHandler,
-				  int operating_mode);
+				  int _operating_mode, double _gear_ratio, int _reset_state,
+                  int _offset);
 
 		bool toggleTorque(bool enable);
 		bool setVelProfiles();
@@ -52,7 +58,7 @@ class X_Motor {
 		int32_t readPosition();
 		bool moveToPos(int goalPosition);		
 		bool closeGripper();
-
+        
 };
 
 
@@ -62,11 +68,15 @@ X_Motor::X_Motor(){
 
 }
 
-void X_Motor::init(int id,
+void X_Motor::init(int _id,
 			dynamixel::PortHandler *_portHandler,
 			dynamixel::PacketHandler *_packetHandler,
-			int operating_mode) {
-			_id = id;
+			int operating_mode, double _gear_ratio, int _reset_state,
+            int _offset) {
+			id = _id;
+            gear_ratio = _gear_ratio;
+            reset_state = _reset_state;
+            offset = _offset;
 			DXL_OPERATING_MODE = operating_mode;
 			portHandler = _portHandler;
 			packetHandler = _packetHandler;
@@ -87,7 +97,7 @@ bool X_Motor::toggleTorque(bool enable) {
     else {
         torque = TORQUE_DISABLE;
     }
-    dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, _id, ADDR_PRO_TORQUE_ENABLE, torque, &dxl_error);
+    dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, id, ADDR_PRO_TORQUE_ENABLE, torque, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS)
     {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
@@ -101,13 +111,13 @@ bool X_Motor::toggleTorque(bool enable) {
         return false;
     }
     else {
-        ROS_INFO_STREAM("Torque Toggled on Motor: " << _id);
+        ROS_INFO_STREAM("Torque Toggled on Motor: " << id);
         return true;
     }
 }
 
 bool X_Motor::setVelProfiles() {
-    dxl_comm_result = packetHandler->write4ByteTxRx(portHandler, _id, ADDR_PRO_VEL_PROFILE, PROFILE_VELOCITY, &dxl_error);
+    dxl_comm_result = packetHandler->write4ByteTxRx(portHandler, id, ADDR_PRO_VEL_PROFILE, PROFILE_VELOCITY, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS)
     {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
@@ -122,13 +132,13 @@ bool X_Motor::setVelProfiles() {
     }
     else
     {
-        ROS_INFO_STREAM("Set Velocity Profile: " << _id);
+        ROS_INFO_STREAM("Set Velocity Profile: " << id);
         return true;
     }
 }
 
 bool X_Motor::setAccProfiles() {
-    dxl_comm_result = packetHandler->write4ByteTxRx(portHandler, _id, ADDR_PRO_ACC_PROFILE, PROFILE_ACCELERATION, &dxl_error);
+    dxl_comm_result = packetHandler->write4ByteTxRx(portHandler, id, ADDR_PRO_ACC_PROFILE, PROFILE_ACCELERATION, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS)
     {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
@@ -143,13 +153,13 @@ bool X_Motor::setAccProfiles() {
     }
     else
     {
-        ROS_INFO_STREAM("Set Acceleration Profile: " << _id);
+        ROS_INFO_STREAM("Set Acceleration Profile: " << id);
         return true;
     }
 }
 
 bool X_Motor::setOperatingMode() {
-    dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, _id, ADDR_PRO_OPERATING_MODE, DXL_OPERATING_MODE, &dxl_error);
+    dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, id, ADDR_PRO_OPERATING_MODE, DXL_OPERATING_MODE, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS)
     {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
@@ -164,13 +174,13 @@ bool X_Motor::setOperatingMode() {
     }
     else
     {
-        ROS_INFO_STREAM("Set Operating Mode on Motor: " << _id);
+        ROS_INFO_STREAM("Set Operating Mode on Motor: " << id);
         return true;
     }
 }
 
 bool X_Motor::setOperatingMode(int operating_mode) {
-    dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, _id, ADDR_PRO_OPERATING_MODE, operating_mode, &dxl_error);
+    dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, id, ADDR_PRO_OPERATING_MODE, operating_mode, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS)
     {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
@@ -185,13 +195,13 @@ bool X_Motor::setOperatingMode(int operating_mode) {
     }
     else
     {
-        ROS_INFO_STREAM("Set Operating Mode on Motor: " << _id);
+        ROS_INFO_STREAM("Set Operating Mode on Motor: " << id);
         return true;
     }
 }
 
 int16_t X_Motor::readLoad(){
-    dxl_comm_result = packetHandler->read2ByteTxRx(portHandler, _id, ADDR_PRO_LOAD, (uint16_t*)&dxl_present_load, &dxl_error);
+    dxl_comm_result = packetHandler->read2ByteTxRx(portHandler, id, ADDR_PRO_LOAD, (uint16_t*)&dxl_present_load, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS) {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
         ROS_INFO_STREAM("Com result: " << error);
@@ -205,7 +215,7 @@ int16_t X_Motor::readLoad(){
 }
 
 int32_t X_Motor::readPosition() {
-    dxl_comm_result = packetHandler->read4ByteTxRx(portHandler, _id, ADDR_PRO_PRESENT_POSITION, (uint32_t*)&dxl_present_position, &dxl_error);
+    dxl_comm_result = packetHandler->read4ByteTxRx(portHandler, id, ADDR_PRO_PRESENT_POSITION, (uint32_t*)&dxl_present_position, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS) {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
         ROS_INFO_STREAM("Com result: " << error);
@@ -219,7 +229,7 @@ int32_t X_Motor::readPosition() {
 }
 
 bool X_Motor::moveToPos(int goalPosition) {
-    dxl_comm_result = packetHandler->write4ByteTxRx(portHandler, _id, ADDR_PRO_GOAL_POSITION, goalPosition, &dxl_error);
+    dxl_comm_result = packetHandler->write4ByteTxRx(portHandler, id, ADDR_PRO_GOAL_POSITION, goalPosition, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS) {
         std::string error = packetHandler->getTxRxResult(dxl_comm_result);
         ROS_INFO_STREAM("Com result: " << error);
@@ -230,7 +240,7 @@ bool X_Motor::moveToPos(int goalPosition) {
         ROS_INFO_STREAM("Error result: " << error);
         return false;
     }
-    if(true){				
+    if(false){				
         do {
             readPosition();
             ROS_INFO_STREAM("Load: " << readLoad());
@@ -247,13 +257,13 @@ bool X_Motor::moveToPos(int goalPosition) {
     }
     
     
-    ROS_INFO_STREAM("ID " << _id << ": " << dxl_present_position);
+    ROS_INFO_STREAM("ID " << id << ": " << dxl_present_position);
     return true;
 }
 
 bool X_Motor::closeGripper(){
 
-        dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, _id, ADDR_GOAL_PWM, -350, &dxl_error);
+        dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, id, ADDR_GOAL_PWM, -350, &dxl_error);
         if (dxl_comm_result != COMM_SUCCESS)
         {
             std::string error = packetHandler->getTxRxResult(dxl_comm_result);
@@ -294,3 +304,4 @@ bool X_Motor::closeGripper(){
         // 	return false;
         // }
 }
+

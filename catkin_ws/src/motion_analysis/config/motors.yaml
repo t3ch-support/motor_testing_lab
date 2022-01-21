@@ -1,0 +1,11 @@
+motor_count: 1
+
+motor_1: {
+  id: 1,
+  op_mode: 4,
+  low_limit: 0,
+  high_limit: 2048,
+  reset_state: 1024,
+  gear_ratio: 2,
+  offset: 0
+}

@@ -1,0 +1,8 @@
+1. Turn off motor torques
+2. Arrange joints into place
+3. Turn on motor torques
+4. Check what the current position of each joint is (in degrees!) using Dynamixel wizard
+5. Edit the "offset" parameters in motors.yaml to the values from step 4
+6. Double check and make sure you did this for all the right ids!
+7. Run tests
+8. If you loose power in the middle of a test, or if the power is turned off to the motors, recalibartion is required

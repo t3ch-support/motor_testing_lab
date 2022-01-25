@@ -1,14 +1,32 @@
 encoder_pub_rate: 20
 cmd_pub_rate: 20
 
-motor_count: 1
+motor_count: 3
 
 motor_1: {
-  id: 1,
+  id: 4,
   op_mode: 4,
-  low_limit: -4096,
-  high_limit: 4096,
-  reset_state: 1024,
-  gear_ratio: 1,
-  offset: 0
+  low_limit: -90,
+  high_limit: 90,
+  reset_state: 0,
+  gear_ratio: 3,
+  offset: 40
+}
+motor_2: {
+  id: 3,
+  op_mode: 4,
+  low_limit: -90,
+  high_limit: 90,
+  reset_state: 0,
+  gear_ratio: 3,
+  offset: 12
+}
+motor_3: {
+  id: 5,
+  op_mode: 4,
+  low_limit: -105,
+  high_limit: 105,
+  reset_state: 0,
+  gear_ratio: 3,
+  offset: 180
 }

@@ -58,18 +58,53 @@ class Cmd_Center {
     void Loop(){
         ros::Rate loop_rate(cmd_pub_rate); // In Hz
         int t = 0;
-		while (ros::ok()){
-            
-            // ROS_INFO_STREAM("Ready for cmd...");
+        // char choice;
+        // ROS_INFO_STREAM("Main Menu");
+        // ROS_INFO_STREAM("a: tuning routine");
+        // ROS_INFO_STREAM("b: run test");
 
+        // std::cin >> choice;
+
+        // if(choice == 'a'){
+        //     sleep(1);
+        //     // Turn off torque
+        //     ROS_INFO_STREAM("1. Torque is off, press any key to continue.");
+        //     std::cin.get();
+
+        //     // Ask for joints to be arranged
+        //     ROS_INFO_STREAM("2. Arrange joints to zero position, then press any key to continue.");
+        //     std::cin.get();
+
+
+        //     // Turn on torque, edit motors.yaml->offset
+        //     ROS_INFO_STREAM("3. Torque is on, press any key to continue.");
+        //     std::cin.get();
+
+
+        //     // Ready
+        //     ROS_INFO_STREAM("4. Ready for test, press any key to run test, or Ctrl-C to cancel.");
+        //     std::cin.get();
+            
+
+
+        // }else
+        // if(choice == 'b'){
+        //     ROS_INFO_STREAM("Beginning test.");         
+        // }else{
+        //     ROS_INFO_STREAM("Invalid input. Try again.");
+        //     Loop();            
+        // }
+
+		while (ros::ok()){
+            // ROS_INFO_STREAM("Running test.");         
+            
             goalState.header.stamp = ros::Time::now();
             for(int i = 0; i<active_specs.size(); i++){
-                goalState.position.at(i) = 120*sin(0.07*t);
+                double amp = active_specs.at(i).high_limit - active_specs.at(i).reset_state;
+                goalState.position.at(i) = amp*sin(0.04*t)+active_specs.at(i).reset_state;
             }
             t++;
-            goal_joint_pub.publish(goalState);
-           
-            
+            goal_joint_pub.publish(goalState);              
             ros::spinOnce();
 			loop_rate.sleep();
         }

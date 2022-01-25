@@ -37,8 +37,8 @@ class X_Motor {
 		const int LEN_PRO_PRESENT_POSITION = 4;
 		const int LEN_PRO_PRESENT_CURRENT = 4;
         const int LEN_PRESENT_VELOCITY = 4;
-		const int PROFILE_ACCELERATION = 300;
-		const int PROFILE_VELOCITY = 300;
+		const int PROFILE_ACCELERATION = 100;
+		const int PROFILE_VELOCITY = 500;
 
 		bool isGripper = false;
 		int id;

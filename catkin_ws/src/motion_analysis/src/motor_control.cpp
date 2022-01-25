@@ -143,22 +143,23 @@ class Motor_Control {
 		bool exceededLimit = false;
 		for(int i = 0; i<joint_goals->position.size(); i++){
 			double goalDegree = joint_goals->position.at(i);
-			// Save goals in radians
-			goalsRadians.push_back(toRadians(goalDegree));
-			// Save goals as raw encoder values
-			goalsRaw.push_back(RadiansToEncoder(goalsRadians.at(i), motors.at(i).offset, motors.at(i).gear_ratio));
-			ROS_INFO_STREAM("D: " << goalDegree << ", R: " << goalsRadians.at(i) << ", E: " << goalsRaw.at(i));
 			// Check to see if commands are beyond the allowable limit
-			if(goalsRaw.at(i) > motors.at(i).high_limit){
-				goalsRaw.at(i) = motors.at(i).high_limit;
+			if(goalDegree > motors.at(i).high_limit){
+				goalDegree = motors.at(i).high_limit;
 				exceededLimit = true;
-			}else if(goalsRaw.at(i) < motors.at(i).low_limit){
-				goalsRaw.at(i) = motors.at(i).low_limit;
+			}else if(goalDegree < motors.at(i).low_limit){
+				goalDegree = motors.at(i).low_limit;
 				exceededLimit = true;				
 			}
 			if(exceededLimit){
 				ROS_INFO_STREAM("Motor w/ ID " << motors.at(i).id << " tried to go out of bounds!");
 			}
+			
+			// Save goals in radians
+			goalsRadians.push_back(toRadians(goalDegree));
+			// Save goals as raw encoder values
+			goalsRaw.push_back(RadiansToEncoder(goalsRadians.at(i), motors.at(i).offset, motors.at(i).gear_ratio));
+			ROS_INFO_STREAM("D: " << goalDegree << ", R: " << goalsRadians.at(i) << ", E: " << goalsRaw.at(i));
 		}
 
 		MoveAllJoints(goalsRaw, false);
@@ -214,6 +215,8 @@ class Motor_Control {
 		if(waitForGoal) ROS_INFO_STREAM("Finished...");
 		return true;
 	}
+
+	// Combine Read- Poisition,Velocity,and Current into a GroupBulkRead function to speed up loop
 
 	void ReadJointCurrent(std::vector<X_Motor> &motorGroup){
 

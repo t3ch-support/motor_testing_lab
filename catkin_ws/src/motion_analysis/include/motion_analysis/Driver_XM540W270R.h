@@ -2,6 +2,16 @@
 #include "dynamixel_sdk/dynamixel_sdk.h"
 #include <ros/ros.h>
 
+struct X_Specs{
+    int id;
+    int op_mode;
+    double gear_ratio;
+    int reset_state;
+    int offset;
+    int high_limit;
+    int low_limit;
+};
+
 class X_Motor {
 		
 	public:
@@ -9,6 +19,9 @@ class X_Motor {
 		const int ADDR_PRO_TORQUE_ENABLE = 64;
 		const int ADDR_PRO_GOAL_POSITION = 116;
 		const int ADDR_PRO_PRESENT_POSITION = 132;
+        const int ADDR_PRO_PRESENT_VELOCITY = 128;
+        const int ADDR_PRO_PRESENT_CURRENT = 126;
+
 		const int ADDR_PRO_OPERATING_MODE = 11;
 		const int ADDR_PRO_VEL_PROFILE = 112;
 		const int ADDR_PRO_ACC_PROFILE = 108;
@@ -22,19 +35,25 @@ class X_Motor {
 		const int DXL_MAXIMUM_POSITION_VALUE = 4095;
 		const int LEN_PRO_GOAL_POSITION = 4;
 		const int LEN_PRO_PRESENT_POSITION = 4;
-		const int PROFILE_ACCELERATION = 30;
-		const int PROFILE_VELOCITY = 130;
+		const int LEN_PRO_PRESENT_CURRENT = 4;
+        const int LEN_PRESENT_VELOCITY = 4;
+		const int PROFILE_ACCELERATION = 300;
+		const int PROFILE_VELOCITY = 300;
 
 		bool isGripper = false;
 		int id;
         double gear_ratio = 1;
         int reset_state = 0;
         int offset = 0;
-
+        int high_limit = 0;
+        int low_limit = 0;
 		int DXL_OPERATING_MODE = 3;
 		int dxl_comm_result = COMM_TX_FAIL;
 		uint8_t dxl_error = 0;
 		int16_t dxl_present_position = 0;
+		int16_t dxl_present_velocity = 0;
+		int16_t dxl_present_current = 0;
+
 		int16_t dxl_present_load = 0;
         
 
@@ -44,10 +63,8 @@ class X_Motor {
 
 		X_Motor();
 		
-		void init(int _id, dynamixel::PortHandler *_portHandler,
-				  dynamixel::PacketHandler *_packetHandler,
-				  int _operating_mode, double _gear_ratio, int _reset_state,
-                  int _offset);
+		void init(X_Specs spec, dynamixel::PortHandler *_portHandler,
+				  dynamixel::PacketHandler *_packetHandler);
 
 		bool toggleTorque(bool enable);
 		bool setVelProfiles();
@@ -56,6 +73,8 @@ class X_Motor {
 		bool setOperatingMode(int operating_mode);
 		int16_t readLoad();
 		int32_t readPosition();
+		int32_t readVelocity();
+
 		bool moveToPos(int goalPosition);		
 		bool closeGripper();
         
@@ -68,18 +87,17 @@ X_Motor::X_Motor(){
 
 }
 
-void X_Motor::init(int _id,
-			dynamixel::PortHandler *_portHandler,
-			dynamixel::PacketHandler *_packetHandler,
-			int operating_mode, double _gear_ratio, int _reset_state,
-            int _offset) {
-			id = _id;
-            gear_ratio = _gear_ratio;
-            reset_state = _reset_state;
-            offset = _offset;
-			DXL_OPERATING_MODE = operating_mode;
+void X_Motor::init(X_Specs spec, dynamixel::PortHandler *_portHandler,
+				  dynamixel::PacketHandler *_packetHandler) {
+			id = spec.id;
+            gear_ratio = spec.gear_ratio;
+            reset_state = spec.reset_state;
+            offset = spec.offset;
+			DXL_OPERATING_MODE = spec.op_mode;
 			portHandler = _portHandler;
 			packetHandler = _packetHandler;
+            high_limit = spec.high_limit;
+            low_limit = spec.low_limit;
 
 
 			toggleTorque(false);
@@ -226,6 +244,20 @@ int32_t X_Motor::readPosition() {
         ROS_INFO_STREAM("Error result: " << error);
     }
     return dxl_present_position;
+}
+
+int32_t X_Motor::readVelocity() {
+    dxl_comm_result = packetHandler->read4ByteTxRx(portHandler, id, ADDR_PRO_PRESENT_VELOCITY, (uint32_t*)&dxl_present_velocity, &dxl_error);
+    if (dxl_comm_result != COMM_SUCCESS) {
+        std::string error = packetHandler->getTxRxResult(dxl_comm_result);
+        ROS_INFO_STREAM("Com result: " << error);
+    }
+    else if (dxl_error != 0)
+    {
+        std::string error = packetHandler->getRxPacketError(dxl_error);
+        ROS_INFO_STREAM("Error result: " << error);
+    }
+    return dxl_present_velocity;
 }
 
 bool X_Motor::moveToPos(int goalPosition) {

@@ -1,8 +1,12 @@
 <launch>
-    
-    <node name="motor_control" pkg="motion_analysis" type="motor_control" output="screen">
+    <rosparam file="$(find motion_analysis)/config/motors.yaml" />
+
+    <node name="motor_control" pkg="motion_analysis" type="motor_control" output="screen" />
         <!-- <param name="offset_1" type="double" value="970" /> -->
-        <rosparam file="$(find motion_analysis)/config/motors.yaml" />
-    </node>
+    <!-- </node> -->
+
+    <node name="cmd_center" pkg="motion_analysis" type="cmd_center" output="screen" />
+        <!-- <param name="offset_1" type="double" value="970" /> -->
+    <!-- </node> -->
 
 </launch>
